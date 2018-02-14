@@ -1,0 +1,1 @@
+srun -c 1 --mem 8G --gres=gpu:1,gmem:12G python translate.py -model weights/aslg-pc12_0.046.trained.chkpt -vocab data/ASLG-PC12/aslg-pc12_0.046.atok.low.pt -src data/ASLG-PC12/ENG-ASL_test_0.046.en.atok

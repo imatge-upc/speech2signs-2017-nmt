@@ -1,0 +1,1 @@
+srun -c 1 --mem 8G --gres=gpu:1,gmem:12G python train.py -data data/ASLG-PC12/aslg-pc12_0.046.atok.low.pt -epoch 50 -save_model weights/aslg-pc12_0.046_50epochs.trained -save_mode best -proj_share_weight
