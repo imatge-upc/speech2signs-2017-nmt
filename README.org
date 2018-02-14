@@ -1,0 +1,59 @@
+# #+TITLE: speech2signs NMT
+# #+AUTHOR: Daniel Moreno Manzano
+
+* speech2signs NMT based on the Pytorch "Attention is all you need" Implementation
+
+** Requirements
+
+   - python 3.5+
+   - pytorch 0.2.0
+   - tqdm
+   - numpy
+   - Some Moses tools: (already in the repository)
+     - [[https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/tokenizer/tokenizer.perl][tokenizer.perl]]
+     - [[https://raw.githubusercontent.com/moses-smt/mosesdecoder/master/scripts/generic/multi-bleu.perl][multi-bleu.perl]]
+
+** Usage
+
+   There are two types of .sh files. The ones that work with:
+
+   - a big portion of the database for the validation and test
+   - a smaller and efficient portion of the database as validation and test. The "0.045" files.
+
+   The best results were given with the second kind, so the next commands will use just these files.
+   
+   
+*** Step 1. Pre-process the data
+    
+    #+BEGIN_SRC shell
+
+      ./prepro_0.045.sh
+
+      ## That is the same as:
+      # for l in en asl; do for f in data/ASLG-PC12/*.$l; do if [[ "$f" != *"test"* ]]; then sed -i "$ d" $f; fi;  done; done
+      # for l in en asl; do for f in data/ASLG-PC12/*.$l; do perl tokenizer.perl -a -no-escape -l $l -q  < $f > $f.atok; done; done
+      # srun -c 1 --mem 8G --gres=gpu:1,gmem:12G python preprocess.py -train_src data/ASLG-PC12/ENG-ASL_Train_0.046.en.atok -train_tgt data/ASLG-PC12/ENG-ASL_Train_0.046.asl.atok -valid_src data/ASLG-PC12/ENG-ASL_Dev_0.046.en.atok -valid_tgt data/ASLG-PC12/ENG-ASL_Dev_0.046.asl.atok -save_data data/ASLG-PC12/aslg-pc12_0.046.atok.low.pt
+
+    #+END_SRC
+
+*** Step 2. Train the model
+
+    #+BEGIN_SRC shell
+
+    ./train_0.045.sh
+
+    ## That is the same as:
+    # srun -c 1 --mem 8G --gres=gpu:1,gmem:12G python train.py -data data/ASLG-PC12/aslg-pc12_0.046.atok.low.pt -epoch 50 -save_model weights/aslg-pc12_0.046_50epochs.trained -save_mode best -proj_share_weight
+    
+    #+END_SRC
+
+*** Step 3. Test the model / Translate
+
+    #+BEGIN_SRC shell
+
+    ./test_0.045.sh
+    
+    ## That is the same as
+    # srun -c 1 --mem 8G --gres=gpu:1,gmem:12G python translate.py -model weights/aslg-pc12_0.046.trained.chkpt -vocab data/ASLG-PC12/aslg-pc12_0.046.atok.low.pt -src data/ASLG-PC12/ENG-ASL_test_0.046.en.atok
+
+    #+END_SRC
